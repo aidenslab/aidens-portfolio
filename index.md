@@ -91,3 +91,14 @@ One of the best parts about Github is that you can view how other people set up 
 
 To watch the BSE tutorial on how to create a portfolio, click here.
 --->
+
+# Starter Project
+
+For my starter project I soldered an RGB slider together, which involved three sliders, an LED light, and a USB-C connector soldered to a PCB. 
+The sliders act as **potentiometers**, or variable resistors, and can increase or decrease the current (by adjusting resistance) through each LED channel (red, green, and blue). By blending the current for red, green, and blue inside the LED, we can mix colors. 
+
+| ![Slider](docs/assets/slider.png) |
+|:--:|
+|Blending red and blue to make purple|
+
+

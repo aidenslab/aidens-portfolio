@@ -9,6 +9,8 @@ This project leverages computer vision to detect and track a ball using a camera
 
 # First Milestone
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/kIgdshT56f0?list=PLe-u_DjFx7eui8dmPGji-0-slT8KydYv_" title="Aiden L. Milestone 1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
 My first milestone aims to assemble the main components of the ball tracking robot, which includes: 
 - **Chassis**: as the base of the car.
 - **L298N Motor Driver**: uses two H-bridges to allow changes in speed and direction for two motors.

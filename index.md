@@ -5,10 +5,12 @@ This project leverages computer vision to detect and track a ball using a camera
 |:--:|:--:|:--:|:--:|
 | Aiden L | Palo Alto High School | Electrical Engineering | Incoming Sophomore
 
-<img src="docs/assets/AidenL.png" width="200" height="267" />
+<img src="docs/assets/AidenL.png" width="400" height="533" />
 
 
 # Second Milestone
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/D0dFoDQxqu8?list=PLe-u_DjFx7eui8dmPGji-0-slT8KydYv_" title="Aiden L. Milestone 2" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 My second milestone deals with all computer vision. Here, I set up a live camera feed with `picamera2` and used `cv2` to find the center of the ball and approximate its radius. 
 <img src="docs/assets/cv+demo.gif" width="1250" height="400" />
@@ -50,7 +52,7 @@ But although relatively simple, this milestone took six days to complete. This w
 I plan to start implementing object detection and the provided ultrasonic sensors to identify and track the ball next. 
 
 # Starter Project
-<iframe width="560" height="315" src="https://www.youtube.com/embed/1uRjqW9JUWU?si=RzlLivTnppujge-3" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/1uRjqW9JUWU?si=RzlLivTnppujge-3" title="Aiden L. Starter Project" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 
 For my starter project I soldered an RGB slider together, which involved three sliders, an LED light, and a USB-C connector soldered to a PCB. 

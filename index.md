@@ -63,8 +63,85 @@ The sliders act as **potentiometers**, or variable resistors, and can increase o
 |Blending red and blue to make purple|
 
 # Schematics
+
 | ![Milestone 1](docs/assets/schematic_m1.png) |
 |:--:|
-|Schematic for milestone 1 wiring|
+|Schematic for milestone 1|
 
+# Code
 
+`motors.py`:
+```py
+import pigpio
+import time
+
+pi = pigpio.pi()
+
+class Motor:
+    def __init__(self, in1, in2, pwm):
+        self.in1 = in1
+        self.in2 = in2
+        self.pwm = pwm
+        pi.set_mode(self.in1, pigpio.OUTPUT)
+        pi.set_mode(self.in2, pigpio.OUTPUT)
+        pi.set_mode(self.pwm, pigpio.OUTPUT)
+        
+        self.cold = True
+        
+    def normalize(self, speed):
+        speed = max(0, min(speed, 1))  # Ensure speed is between 0 and 1
+        return int(speed * 255)
+    
+    def output_pwm(self, speed):
+        speed = self.normalize(speed)
+        if speed < 100 and self.cold:  # "kickstart" the PWM with a high value to get it moving
+            print("Kickstarting PWM")
+            pi.set_PWM_dutycycle(self.pwm, 255)
+            time.sleep(0.01)
+        pi.set_PWM_dutycycle(self.pwm, speed)
+
+    def forward(self, speed):  # Speed 0-1
+        pi.write(self.in1, 1)
+        pi.write(self.in2, 0)
+        
+        self.output_pwm(speed)
+
+    def backward(self, speed):
+        speed = self.normalize(speed)
+        pi.write(self.in1, 0)
+        pi.write(self.in2, 1)
+        
+        self.output_pwm(speed)
+
+    def stop(self):
+        pi.write(self.in1, 0)
+        pi.write(self.in2, 0)
+        pi.set_PWM_dutycycle(self.pwm, 0)
+
+IN1 = 24
+IN2 = 23
+IN3 = 22
+IN4 = 27
+ENA = 12
+ENB = 13
+
+LEFT = Motor(IN1, IN2, ENA)
+RIGHT = Motor(IN3, IN4, ENB)
+
+def stop():
+    LEFT.stop()
+    RIGHT.stop()
+
+def cleanup():
+    stop()
+    pi.stop()
+```
+## Notes
+- `pigpio` is already imported. Run `sudo pigpiod` every time you boot up the pi (or set up cron) so the pigpio daemon has access to your GPIO.
+- `Motor` class: takes in two GPIO pin numbers and the enable pin number.
+  - `normalize()` takes in a proportion of power from [0-1] and sets it in the range [0-255] to write to PWM (with some range checking).
+  - `output_pwm()` takes in a proportion of power from [0-1] and writes to PWM, "jumpstarting" the PWM by sending a high value for a very short amount of time if the proportion is too low.
+  - `forward()`/`backward()` methods take in a proportion of power from [0-1].
+- The ports use Broadcom (aka BCM) GPIO numbers.
+- Wrap a `try`/`finally` loop in all your programs that use these motors, always call `cleanup()` in your `finally` clause.
+  

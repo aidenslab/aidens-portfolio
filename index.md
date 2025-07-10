@@ -5,7 +5,7 @@ This project leverages computer vision to detect and track a ball using a camera
 |:--:|:--:|:--:|:--:|
 | Aiden L | Palo Alto High School | Electrical Engineering | Incoming Sophomore
 
-<img src="docs/assets/AidenL.png" width="600" height="800" />
+<img src="docs/assets/AidenL.png" width="200" height="267" />
 
 
 # Second Milestone

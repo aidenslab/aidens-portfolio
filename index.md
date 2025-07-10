@@ -11,7 +11,7 @@ This project leverages computer vision to detect and track a ball using a camera
 # Second Milestone
 
 My second milestone deals with all computer vision. Here, I set up a live camera feed with `picamera2` and used `cv2` to find the center of the ball and approximate its radius. 
-<img src="docs/assets/ball_cv.mp4" width="1200" height="524" />
+<img src="docs/assets/cv+demo.gif" width="1200" height="524" />
 
 The main part of the code includes:
 1) **Image Capture**: Capturing a photo with `Picamera2.capture_array()` and converting its RGB data to HSV with `cv2.cvtColor()`;

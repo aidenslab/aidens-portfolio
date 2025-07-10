@@ -11,9 +11,9 @@ This project leverages computer vision to detect and track a ball using a camera
 # Second Milestone
 
 My second milestone deals with all computer vision. Here, I set up a live camera feed with `picamera2` and used `cv2` to find the center of the ball and approximate its radius. 
-<img src="docs/assets/cv+demo.gif" width="1200" height="524" />
+<img src="docs/assets/cv+demo.gif" width="1200" height="640" />
 
-The main part of the code includes:
+The main part of the code includes:<br>
 1) **Image Capture**: Capturing a photo with `Picamera2.capture_array()` and converting its RGB data to HSV with `cv2.cvtColor()`;<br>
 2) **HSV Thresholds**: Creating two HSV thresholds (upper and lower bounds) with `cv2.inRange()` and combining them with a bitwise OR (we use two thresholds because red wraps around hue in HSV from 1-10 and 170-180); this should result in a binary (black + white) mask with white pixels representing red pixels in the image;<br>
 3) **Noise Filtering**: Average and erosion filters with `cv2.blur()` and `cv2.erode()` to filter out noise; at the end of this step, we should be left with all white pixels in the image representing the ball;<br>

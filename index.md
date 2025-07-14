@@ -1,5 +1,5 @@
 # Ball Tracking Robot
-This project leverages computer vision to detect and track a ball using a camera connected to a Raspberry Pi. The minicomputer also controls two DC motors on a car through an L298 motor driver.
+This project leverages computer vision to detect and track a ball using a camera and two motors connected to a Raspberry Pi.
 
 | **Engineer** | **School** | **Area of Interest** | **Grade** |
 |:--:|:--:|:--:|:--:|
@@ -7,12 +7,27 @@ This project leverages computer vision to detect and track a ball using a camera
 
 <img src="docs/assets/AidenL.png" width="400" height="533" />
 
+# Third Milestone
+My third milestone aims to combine motors (milestone 1) and computer vision (milestone 2) to make the robot cleanly follow the ball. (don't watch the video, it is no good at all...)
+
+Initially, I took a photo every loop while the code was running and had the robot move forward, turn left, or turn right at full power (with `RPi.GPIO`) based on which side of the robot the ball was on. However, this led to some very janky movement, as full speed leads to overshooting. For finer control, I needed to adjust the speed of the motors.
+
+This can be done through the enable pins (ENA/ENB) of the L298N motor driver, which support PWM (pulse width modulation), where power is rapidly toggled on and off to control the average speed of the motor, as opposed to modifying the voltage with a potentiometer (like making an analog output with a digital signal). As it turns out, the Pi has specific hardware PWM pins that allow PWM to run independently in the background as opposed to continuously toggling power on and off with software. To adjust PWM in code, I used the `pigpio` library.
+
+With more precise speed control, we continuously take pictures and calculate the horizontal distance of the ball from the center, called "error". We have a base speed for both motors, and calculate a "correction" proportional to the error. By adding the correction to the left motor and subtracting the correction to the right motor, the robot moves smoothly towards the ball based on how far off center the ball is. (todo diagram)
+
+If the ball is not in frame, the robot spins around, searching for a ball. However, the robot spins quickly, meaning the ball only appears for 7-8 frames-- by the time the robot pauses, the ball is out of frame again (because of inertia, probably). One solution was to make the robot spin far slower, but I wanted to optimize the speed of the robot; this was my biggest challenge throughout this entire milestone. 
+
+To solve this, I use a flag to track whether the robot is in *search mode*, which activates when the ball is out of frame. In search mode, the robot spins in the last known direction of the ball (e.g. right). 
+So as it overshoots and misses the ball, it has briefly seen the ball on the other side of the frame (e.g. on the left), and updates the last known direction and spins towards it (e.g. left). But because of motor acceleration "lag", the robot turns slower, and the ball comes back in view for long enough for the robot to lock on to the robot. 
+
+This "overshoot-then-reverse" motion is actually quite effective, and tracking the direction of the ball kills two birds with one stone as the robot gets a smart default direction to spin when, for example, the ball is kicked out of frame. (todo diagram)
 
 # Second Milestone
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/D0dFoDQxqu8?list=PLe-u_DjFx7eui8dmPGji-0-slT8KydYv_" title="Aiden L. Milestone 2" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-My second milestone deals with all computer vision. Here, I set up a live camera feed with `picamera2` and used `cv2` to find the center of the ball and approximate its radius. 
+My second milestone deals with computer vision. Here, I set up a live camera feed with `picamera2` and used `cv2` to find the center of the ball and approximate its radius. 
 <img src="docs/assets/cv+demo.gif" width="1250" height="400" />
 
 The main part of the code includes:<br>
@@ -310,7 +325,7 @@ The code is broken into sections:
 - **Main Loop**: The code in the main loop keeps running until we press "q" or ESC.
   - **Image Processing**: Captures an image and finds the location of the ball with the `find_ball()` method from `cv.py`.
     - **Drawing**: Draws the estimated ball position onto a frame overlaying the picture with `cv2.namedWindow`.
-    - **Control Logic**: Calculates `error` of the ball, or horizontal distance from the center, which is positive when the ball is to the right and negative when the ball is to the left, and adjusts motor powers accordingly. If the ball leaves the frame, the robot tracks which direction it went (left or right).
+    - **Control Logic**: Calculates `error` of the ball, or horizontal distance from the center, which is positive when the ball is to the right and negative when the ball is to the left, and calculates a `correction` based on `KP` and `error`. This `correction` is added to the left motor and subtracted from the right motor such that the left motor has a higher power (turns right) when the ball is on the right, and vice versa (see milestone 3 text). If the ball leaves the frame, the robot tracks which direction it went (left or right).
   - **Searching**: If no ball is detected, the robot moves in the last known direction of the ball.
   - **Display**: Shows the edited frame in the OpenCV window.
 - **Cleanup & Exit**: ALWAYS runs at the end of execution because of the `finally` clause. Stops the motors, camera, and window.

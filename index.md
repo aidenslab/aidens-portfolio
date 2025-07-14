@@ -8,6 +8,8 @@ This project leverages computer vision to detect and track a ball using a camera
 <img src="docs/assets/AidenL.png" width="400" height="533" />
 
 # Third Milestone
+<iframe width="560" height="315" src="https://www.youtube.com/embed/vWis9vcHc0s?list=PLe-u_DjFx7eui8dmPGji-0-slT8KydYv_" title="Aiden L. Milestone 3" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
 My third milestone aims to combine motors (milestone 1) and computer vision (milestone 2) to make the robot cleanly follow the ball. (don't watch the video, it is no good at all...)
 
 Initially, I took a photo every loop while the code was running and had the robot move forward, turn left, or turn right at full power (with `RPi.GPIO`) based on which side of the robot the ball was on. However, this led to some very janky movement, as full speed leads to overshooting. For finer control, I needed to adjust the speed of the motors.
@@ -329,3 +331,18 @@ The code is broken into sections:
   - **Searching**: If no ball is detected, the robot moves in the last known direction of the ball.
   - **Display**: Shows the edited frame in the OpenCV window.
 - **Cleanup & Exit**: ALWAYS runs at the end of execution because of the `finally` clause. Stops the motors, camera, and window.
+
+# Bill of Materials
+
+| **Part** | **Note** | **Price** | **Link** |
+|:--:|:--:|:--:|:--:|
+| CanaKit Raspberry Pi 4 4GB Starter Kit | Kit with an Raspberry Pi, 32GB SD card, case, and power switch | $119.99 | <a href="https://a.co/d/izgmcHI"> Link </a> |
+| Raspberry Pi Camera Module | The camera used to take pictures for object detection | $14.99 | <a href="https://a.co/d/1ZRiWdT"> Link </a> |
+| L298N Motor Driver | H-Bridge motor board that drives two motors | $7.99 | <a href="https://a.co/d/9MTpfAY"> Link </a> |
+| Robot Car Chassis Kit | Chassis of the robot | $13.99 | <a href="https://a.co/d/apN2XUA"> Link </a> |
+| Breadboard | To ground components together | $8.59 | <a href="https://a.co/d/eMICX6N"> Link </a> |
+| Jumper Wires | To connect the Raspberry Pi, L298N, and breadboard | $6.98 | <a href="https://a.co/d/fJa97op"> Link </a> |
+| INIU 10000mAh Portable Charger | Portable power bank to put on the robot | $21.99 | <a href="https://a.co/d/0ViHfKL"> Link </a> |
+| Wireless Mouse & Keyboard | To operate the Raspberry Pi on setup | $22.99 | <a href="https://a.co/d/gXT7v1C"> Link </a> |
+| HDMI Video Capture Card | To display RPi contents onto laptop | $9.98 | <a href="https://a.co/d/hnrHAcT"> Link </a> |
+| Soldering Kit | For soldering | $14.99 | <a href="https://a.co/d/4coe2kY"> Link </a> |

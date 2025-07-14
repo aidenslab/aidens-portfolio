@@ -70,6 +70,7 @@ The sliders act as **potentiometers**, or variable resistors, and can increase o
 
 # Code
 
+---
 `motors.py`:
 ```py
 import pigpio
@@ -115,6 +116,7 @@ class Motor:
 - The `pigpio` library is already preinstalled with the RPi OS. It supports "hardware PWM" where specific GPIO pins have dedicated timers for toggling power, as opposed to "software PWM" which relies on software to toggle power (which is apparently less accurate?)
 - Always run `sudo pigpiod` on RPi startup to start the `pigpio` daemon (don't have to do so every time).
 
+---
 `cv.py`:
 ```py
 import cv2
@@ -165,6 +167,7 @@ def find_ball(frame):
 - Blur filter, erosion, and contours (look it up)
 - Get center based on the center of the smallest surrounding circle of the largest contour (which should be of the ball).
 
+---
 `main.py`:
 ```py
 from picamera2 import Picamera2

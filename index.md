@@ -80,9 +80,9 @@ The sliders act as **potentiometers**, or variable resistors, and can increase o
 
 # Schematics
 
-| ![Milestone 2](docs/assets/schematic_m2.png) |
+| ![Milestone 3](docs/assets/schematic_m3.png) |
 |:--:|
-|Schematic for milestone 2 (added enable pins)|
+|Schematic for milestone 3 (added enable pins)|
 
 | ![Milestone 1](docs/assets/schematic_m1.png) |
 |:--:|

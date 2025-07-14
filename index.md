@@ -31,6 +31,7 @@ This "overshoot-then-reverse" motion is actually quite effective, and tracking t
 
 My second milestone deals with computer vision. Here, I set up a live camera feed with `picamera2` and used `cv2` to find the center of the ball and approximate its radius. 
 <img src="docs/assets/cv+demo.gif" width="1250" height="400" />
+<br>
 
 The main part of the code includes:<br>
 1) **Image Capture**: Capturing a photo with `Picamera2.capture_array()` and converting its RGB data to HSV with `cv2.cvtColor()`;<br>
@@ -56,9 +57,7 @@ My first milestone aims to assemble the main components of the ball tracking rob
 - **Breadboard**: to connect components without soldering, right now only used to ground the Pi and battery pack together.
 - **Battery Pack**: to power the motors.
 
-| ![Assembly](docs/assets/milestone1.png)
-|:--:|
-|Assembly of the main components|
+<img src="docs/assets/milestone1.png width="720" height="1280"> 
 
 The wiring is quite simple; the Raspberry Pi and the battery pack are grounded together on the breadboard, then connected into the GND input of the L298N motor driver. Four GPIO pins from the Pi are connected to the IN1-IN4 ports of the L298N. The battery pack's positive lead is connected to the 12V input of the driver. Finally, the four output pins of the motor driver are wired to two motors attached to the wheels.
 

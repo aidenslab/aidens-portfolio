@@ -73,50 +73,121 @@ The sliders act as **potentiometers**, or variable resistors, and can increase o
 `motors.py`:
 ```py
 import pigpio
-import time
 
-pi = pigpio.pi()
 
 class Motor:
-    def __init__(self, in1, in2, pwm):
+    def __init__(self, pi, in1, in2, pwm, percent=100):
+        self.pi = pi
         self.in1 = in1
         self.in2 = in2
         self.pwm = pwm
-        pi.set_mode(self.in1, pigpio.OUTPUT)
-        pi.set_mode(self.in2, pigpio.OUTPUT)
-        pi.set_mode(self.pwm, pigpio.OUTPUT)
-        
-        self.cold = True
+        self.percent = percent
+
+        self.pi.set_mode(self.in1, pigpio.OUTPUT)
+        self.pi.set_mode(self.in2, pigpio.OUTPUT)
+        self.pi.set_mode(self.pwm, pigpio.OUTPUT)
         
     def normalize(self, speed):
         speed = max(0, min(speed, 1))  # Ensure speed is between 0 and 1
         return int(speed * 255)
     
     def output_pwm(self, speed):
-        speed = self.normalize(speed)
-        if speed < 100 and self.cold:  # "kickstart" the PWM with a high value to get it moving
-            print("Kickstarting PWM")
-            pi.set_PWM_dutycycle(self.pwm, 255)
-            time.sleep(0.01)
-        pi.set_PWM_dutycycle(self.pwm, speed)
+        speed = self.normalize(speed) * self.percent / 100
+        self.pi.set_PWM_dutycycle(self.pwm, speed)
 
     def forward(self, speed):  # Speed 0-1
-        pi.write(self.in1, 1)
-        pi.write(self.in2, 0)
-        
+        self.pi.write(self.in1, 1)
+        self.pi.write(self.in2, 0)
         self.output_pwm(speed)
 
     def backward(self, speed):
-        speed = self.normalize(speed)
-        pi.write(self.in1, 0)
-        pi.write(self.in2, 1)
-        
+        self.pi.write(self.in1, 0)
+        self.pi.write(self.in2, 1)
         self.output_pwm(speed)
 
     def stop(self):
-        pi.write(self.in1, 0)
-        pi.write(self.in2, 0)
-        pi.set_PWM_dutycycle(self.pwm, 0)
+        self.pi.write(self.in1, 0)
+        self.pi.write(self.in2, 0)
+
+```
+## Notes
+- PWM (pulse width modulation) controls the speed by rapidly toggling power on and off. The length of the "on" pulses control the amount of power delivered, as opposed to changing the voltage output from the pin.
+- The `pigpio` library is already preinstalled with the RPi OS. It supports "hardware PWM" where specific GPIO pins have dedicated timers for toggling power, as opposed to "software PWM" which relies on software to toggle power (which is apparently less accurate?)
+- Always run `sudo pigpiod` on RPi startup to start the `pigpio` daemon (don't have to do so every time).
+
+`cv.py`:
+```py
+import cv2
+import numpy as np
+
+
+# HSV "wraps around" red so we need two masks
+mask1_low = np.array([0, 206, 0])  # for small ball, remove this mask for big ball
+mask1_high = np.array([10, 255, 255])
+
+mask2_low = np.array([170, 206, 30])  # [170, 108, 30] for big ball
+mask2_high = np.array([180, 255, 255])  # [180, 240, 255] for big ball
+
+
+def find_ball(frame):
+    frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    
+    # Masks over HSV frame
+    mask1 = cv2.inRange(frame_hsv, mask1_low, mask1_high)
+    mask2 = cv2.inRange(frame_hsv, mask2_low, mask2_high)
+    mask = mask1 | mask2
+    
+    # Erode (white noise) away
+    kernel = np.ones((8, 8), np.uint8)
+    mask = cv2.blur(mask, (8, 8))
+    clean_mask = cv2.erode(mask, kernel, iterations=2)
+
+    # Find contours, use biggest contour and draw enclosing circle as the ball
+    contours, hierarchy = cv2.findContours(clean_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    
+    if contours:
+        ball = max(contours, key=cv2.contourArea)
+        
+        if cv2.contourArea(ball) > 200:
+            cv2.drawContours(frame, [ball], -1, (0, 255, 0), 3)
+            
+            (x, y), radius = cv2.minEnclosingCircle(ball)
+            center = (int(x), int(y))
+            radius = int(radius)
+            return (center), radius
+    
+    return None
+
+```
+## Notes
+- The main method here is `find_ball`, which takes in an array of pixels from (`frame`) and returns the center (coordinates) and radius (integer) of the ball.
+- I use two HSV thresholds (masks): `mask_1` for red-orange hues, and `mask2` for red-pink hues.
+- Blur filter, erosion, and contours (look it up)
+- Get center based on the center of the smallest surrounding circle of the largest contour (which should be of the ball).
+
+`main.py`:
+```py
+from picamera2 import Picamera2
+import cv2
+import pigpio
+import time
+
+from cv import find_ball
+from motors import *
+
+
+# ------ CAMERA SETUP ------
+picam2 = Picamera2()
+print(picam2.sensor_modes)
+config = picam2.create_video_configuration(main={"size": (640, 480), "format": "RGB888"})
+picam2.configure(config)
+picam2.start()
+
+cv2.namedWindow("Robot View")
+
+
+# ------ MOTOR SETUP ------
+pi = pigpio.pi()
 
 IN1 = 24
 IN2 = 23
@@ -125,23 +196,114 @@ IN4 = 27
 ENA = 12
 ENB = 13
 
-LEFT = Motor(IN1, IN2, ENA)
-RIGHT = Motor(IN3, IN4, ENB)
-
-def stop():
-    LEFT.stop()
-    RIGHT.stop()
+LEFT = Motor(pi, IN1, IN2, ENA)
+RIGHT = Motor(pi, IN3, IN4, ENB, percent=75)
 
 def cleanup():
-    stop()
+    LEFT.stop()
+    RIGHT.stop()
     pi.stop()
+    
+
+# ------ CONTROL PARAMETERS ------
+KP = 0.001  # Proportional gain 
+BASE_SPEED = 0.75
+
+
+# ------ MAIN LOOP ------
+try:
+    searching = False
+    search_dir = "right"
+    
+    while True:
+        frame = picam2.capture_array()
+        result = find_ball(frame)
+
+        # ------ IMAGE PROCESSING ------
+        if result:
+            center, radius = result
+            x, y = center
+            
+            # ------ DRAWING ------
+            cv2.circle(frame, center, 4, (255, 0, 0), -1)  # center
+            cv2.circle(frame, center, radius, (255, 0, 0), 2)  # ball 
+                
+            cv2.rectangle(frame, (center[0] - 20, center[1] - 5), (center[0] + 70, center[1] + 25), (255, 0, 0), -1)
+            cv2.putText(frame, f"x={center[0]}", (center[0], center[1] + 20), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (255, 255, 255))
+            
+            # ------ CONTROL LOGIC ------
+            error = x - 320
+            correction = KP * error  # (+) -> right, (-) -> left
+            
+            left_speed = BASE_SPEED + correction
+            right_speed = BASE_SPEED - correction
+
+            print(f"RADIUS {radius} LEFT {left_speed} RIGHT {right_speed}")
+
+            LEFT.forward(left_speed)
+            RIGHT.forward(right_speed)
+            
+            if x <= 175:  # Left
+                cv2.arrowedLine(frame, (100, 450), (20, 450), (0, 255, 0), 3)
+                search_dir = "left"
+                
+            elif x >= 465:  # Right
+                cv2.arrowedLine(frame, (540, 450), (620, 450), (0, 255, 0), 3)
+                search_dir = "right"
+            else:
+                if radius > 200:  # Ball found
+                    print("FOUND")
+                    cv2.putText(frame, "Ball found", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                    LEFT.stop()
+                    RIGHT.stop()
+                elif radius > 150:
+                    print("FINAL APPROACH")
+                    cv2.putText(frame, "Final approach", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                    
+                    LEFT.forward(1);  # Jumpstart the robot movement
+                    LEFT.forward(1);
+                    time.sleep(0.01);
+                    
+                    LEFT.forward(0.35)
+                    RIGHT.forward(0.35)
+        
+        # ------ SEARCHING ------
+        else:
+            print("SEARCHING")
+            cv2.putText(frame, "No ball detected", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+
+            if search_dir == "right":
+                LEFT.forward(0.45)
+                RIGHT.stop()
+            else:
+                LEFT.stop()
+                RIGHT.forward(0.45)
+            
+            searching = True
+        
+        # ------ DISPLAY ------
+        cv2.imshow("Robot View", frame)
+        key = cv2.waitKey(1) & 0xFF
+        if key and (key == 27 or key == ord('q')):  # ESC or q
+            break
+
+# ------ CLEANUP & EXIT ------
+finally:
+    cleanup()
+    cv2.destroyAllWindows()
+    picam2.stop()
+    print("Camera stopped, windows destroyed")
+
 ```
 ## Notes
-- `pigpio` is already imported. Run `sudo pigpiod` every time you boot up the pi (or set up cron) so the pigpio daemon has access to your GPIO.
-- `Motor` class: takes in two GPIO pin numbers and the enable pin number.
-  - `normalize()` takes in a proportion of power from [0-1] and sets it in the range [0-255] to write to PWM (with some range checking).
-  - `output_pwm()` takes in a proportion of power from [0-1] and writes to PWM, "jumpstarting" the PWM by sending a high value for a very short amount of time if the proportion is too low.
-  - `forward()`/`backward()` methods take in a proportion of power from [0-1].
-- The ports use Broadcom (aka BCM) GPIO numbers.
-- Wrap a `try`/`finally` loop in all your programs that use these motors, always call `cleanup()` in your `finally` clause.
-  
+The code is broken into sections:
+- **Camera Setup**: Use `Picamera2` to set up a camera (using RGB format).
+- **Motor Setup**: Set up motors using the `Motor` class from `motors.py`.
+- **Control Parameters**: Implement parametes for *proportional control* (adjust steering based on how far left/right the ball is) to smooth out robot movement, as opposed to steering only left or right. `KP` (the proportional gain) adjusts how aggressively we steer, `BASE_SPEED` adjusts our forward movement speed.
+- **Main Loop**: The code in the main loop keeps running until we press "q" or ESC.
+  - **Image Processing**: Captures an image and finds the location of the ball with the `find_ball()` method from `cv.py`.
+    - **Drawing**: Draws the estimated ball position onto a frame overlaying the picture with `cv2.namedWindow`.
+    - **Control Logic**: Calculates `error` of the ball, or horizontal distance from the center, which is positive when the ball is to the right and negative when the ball is to the left, and adjusts motor powers accordingly. If the ball leaves the frame, the robot tracks which direction it went (left or right).
+  - **Searching**: If no ball is detected, the robot moves in the last known direction of the ball.
+  - **Display**: Shows the edited frame in the OpenCV window.
+- **Cleanup & Exit**: ALWAYS runs at the end of execution because of the `finally` clause. Stops the motors, camera, and window.
